@@ -1,0 +1,35 @@
+- name: create ec2 instances and route53 records
+  hosts: all
+  connection: local
+  vars:
+    sg_id: sg-03371e37c82c1a968
+    ami_id: ami-0220d79f3f480ecf
+    domain_name: kosuri.info
+    env: dev
+    action: create
+    instances:
+      - mongodb
+      - catalogue
+  tasks:
+  #create ec2 instances
+  - name: create ec2 instances
+    amazon.ec2.instance:
+      instnce_type: "t3.micro"
+      security_group: "{{ sg_id }}"
+      image_id: "{{ ami_id }}"
+      name: " {{ item }}-{{ env}}"
+      tags:
+        Project: roboshop
+        Component: "{{ item }}"
+        Environment: "{{ env }}"
+        name: "{{ item }}-{{ env }}"
+    loops: "{{ instances }}"
+    register: ec2_output
+    when: action == "create"
+
+  - name: print the output of ec2 instance creation
+    ansible.builtin.debug:
+      msg: "{{ ec2_output }}"
+      when: action == "create"
+  #to test the code till creattion of ec2 instances 
+  # ansible-playbook -i localhost, roboshop.yaml
