@@ -30,6 +30,6 @@
   - name: print the output of ec2 instance creation
     ansible.builtin.debug:
       msg: "{{ ec2_output }}"
-      when: action == "create"
+    when: action == "create"
   #to test the code till creattion of ec2 instances 
   # ansible-playbook -i localhost, roboshop.yaml
