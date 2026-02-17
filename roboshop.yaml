@@ -91,8 +91,8 @@
     amazon.aws.ec2_instance:
       state: absent
       name: "{{ item }}-{{ env}}" # mongodb-dev, catalogue-dev
-      filters:
-        instance-state-name: ["running", "stopped", "pending"]
+      #filters:
+      #  instance-state-name: ["running", "stopped", "pending"]
       wait: false # to avoid waiting for the instance to be terminated, because it will take around 1-2 mins to terminate the instance and we don't want to wait for that long
     loop: "{{ instances }}"
     when: action == "destroy"
