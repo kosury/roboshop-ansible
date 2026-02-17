@@ -66,7 +66,7 @@
   ### DELETE
   #delete r53 records - frontend
   - name: delete r53 records for frontend
-    amazon.aws.ec2_route53:
+    amazon.aws.route53:
       state: absent
       zone: "{{ domain_name }}"
       record: "roboshop-{{ env }}.{{ domain_name }}" # roboshop-dev.kosuri.info
@@ -78,7 +78,7 @@
     - action == "destroy" # to delete only when action is destroy
   
   - name: delete r53 records - backend and DBs
-    amazon.aws.ec2_route53:
+    amazon.aws.route53:
       state: absent
       zone: "{{ domain_name }}"
       record: "{{ item }}-{{ env}}.{{ domain_name }}" # mongodb-dev.kosuri.info, catalogue-dev.kosuri.info
