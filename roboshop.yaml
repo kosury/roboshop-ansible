@@ -11,13 +11,14 @@
       - mongodb
       - catalogue
   tasks:
+  ### CREATE
   #create ec2 instances
   - name: create ec2 instances
     amazon.aws.ec2_instance:
       instance_type: "t3.micro"
       security_group: "{{ sg_id }}"
       image_id: "{{ ami_id }}"
-      name: " {{ item }}-{{ env}}"
+      name: "{{ item }}-{{ env}}"
       tags:
         Project: roboshop
         Component: "{{ item }}"
@@ -33,3 +34,66 @@
     when: action == "create"
   #to test the code till creattion of ec2 instances 
   # ansible-playbook -i localhost, roboshop.yaml
+  #create route53 records
+  - name: create r52 records for backend and DBs
+    amazon.aws.route53:
+      state: present
+      zone: "{{ domain_name }}"
+      record: "{{ item.item }}-{{ env}}.{{ domain_name }}" # mongodb-dev.kosuri.info, catalogue-dev.kosuri.info
+      type: A
+      ttl: 1
+      value: "{{ item.instances[0].private_ip_address }}"
+      wait: false
+      overwrite: true
+    loop: "{{ ec2_output.results }}"
+    when: action == "create"
+
+  - name: create r53 records for frontend
+    amazon.aws.route53:
+      state: present
+      zone: "{{ domain_name }}"
+      record: "roboshop-{{ env }}.{{ domain_name }}" # roboshop-dev.kosuri.info
+      type: A
+      ttl: 1
+      value: "{{ item.instances[0].public_ip_address }}"
+      wait: false
+      overwrite: true
+    loop: "{{ ec2_output.results }}"
+    when: 
+    - item.item == "frontend"
+    - action == "create"
+
+  ### DELETE
+  #delete r53 records - frontend
+  - name: delete r53 records for frontend
+    amazon.aws.ec2_instance:
+      state: absent
+      zone: "{{ domain_name }}"
+      record: "roboshop-{{ env }}.{{ domain_name }}" # roboshop-dev.kosuri.info
+      type: A 
+      ttl: 1
+    loop: "{{ instances }}" # looping through all the records but only deleting frontend record because of
+    when: 
+    - item == "frontend" # to delete only frontend record and not backend records
+    - action == "destroy" # to delete only when action is destroy
+  
+  - name: delete r53 records - backend and DBs
+    amazon.aws.ec2_instance:
+      state: absent
+      zone: "{{ domain_name }}"
+      record: "{{ item }}-{{ env}}.{{ domain_name }}" # mongodb-dev.kosuri.info, catalogue-dev.kosuri.info
+      type: A
+      ttl: 1
+    loop: "{{ instances }}"
+    when: action == "destroy"
+
+  - name: delete ec2 instances
+    amazon.aws.ec2_instance:
+      state: absent
+      name: "{{ item }}-{{ env}}" # mongodb-dev, catalogue-dev
+      wait: false # to avoid waiting for the instance to be terminated, because it will take around 1-2 mins to terminate the instance and we don't want to wait for that long
+    loop: "{{ instances }}"
+    when: action == "destroy"
+
+    
+
